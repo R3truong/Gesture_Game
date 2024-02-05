@@ -1,0 +1,6 @@
+path: ../data
+train: images
+val: images
+
+nc: 2
+names: ["point_left", "point_right"]
