@@ -1,0 +1,12 @@
+train: nano hand gestures.v2i.yolov5pytorch/train/images
+val: nano hand gestures.v2i.yolov5pytorch/valid/images
+test: nano hand gestures.v2i.yolov5pytorch/test/images
+nc: 3
+names: ['forward', 'left', 'right']
+
+roboflow:
+  workspace: object-detection-mb16y
+  project: nano-hand-gestures
+  version: 2
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/object-detection-mb16y/nano-hand-gestures/dataset/2
