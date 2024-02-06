@@ -6,7 +6,11 @@ import pathlib
 temp = pathlib.PosixPath
 pathlib.PosixPath = pathlib.WindowsPath
 
-model = torch.hub.load('ultralytics/yolov5', 'custom', path='C:/Users/Richa/Desktop/deliverable_1_1/yolov5/runs/train/exp4/weights/best.pt', force_reload=True)
+model = torch.hub.load('ultralytics/yolov5', 'custom', path='yolov5/runs/train/exp4/weights/best.pt', force_reload=True)
+
+device = torch.device(0)
+model.to(device)
+print(device)
 
 class_names = model.names
 
@@ -14,6 +18,7 @@ current_detection = None
 
 cap = cv2.VideoCapture(0)
 while cap.isOpened():
+    
     ret, frame = cap.read()
     results = model(frame)
     cv2.imshow('Gesture Detection', np.squeeze(results.render()))
