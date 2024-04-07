@@ -1,6 +1,6 @@
-train: Gestures.v1i.yolov5pytorch/train/images
-val: Gestures.v1i.yolov5pytorch/valid/images
-test: Gestures.v1i.yolov5pytorch/test/images
+train: Gestures.v2i.yolov5pytorch/train/images
+val: Gestures.v2i.yolov5pytorch/valid/images
+test: Gestures.v2i.yolov5pytorch/test/images
 
 nc: 4
 names: ['Pause', 'Point-Forward', 'Point-Left', 'Point-Right']
