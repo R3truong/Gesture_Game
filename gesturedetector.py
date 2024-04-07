@@ -15,7 +15,7 @@ pathlib.PosixPath = pathlib.WindowsPath
 # PyTorch function used to load models.
 # Trained using YOLOv5 using a custom dataset of gestures
 # YOLOv5 model by Ultralytics https://github.com/ultralytics/yolov5
-model = torch.hub.load('ultralytics/yolov5', 'custom', path='yolov5/runs/train/exp4/weights/best.pt', force_reload=True)
+model = torch.hub.load('ultralytics/yolov5', 'custom', path='yolov5/runs/train/yolov5s_gestures_final_v2/weights/best.pt', force_reload=True)
 
 # Output of algorithm to be used as output to game
 label_names_list = model.names
