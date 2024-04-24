@@ -1,4 +1,10 @@
 import socket
+import torch
+import numpy as np
+import cv2
+import os
+
+import pathlib
 
 host, port = "127.0.0.1", 25001
 dataX = 30
@@ -6,65 +12,67 @@ dataY = 6
 dataZ = 0
 running = True
 
-prompt = "What would you like to do?\nS = Change size\nP = Change Postion\n>>"
-posPrompt = "Postion: Which way would you like to go?\n(X, Y, or Z)\n>>"
-sizPrompt = "Size: Which operation would you like to do?\n(A = add, S = subtract, M = multiply, D = divide)\n>>"
-
 # SOCK_STREAM means TCP socket
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-def sendData(X, Y, Z, type):
-        data = str(type) + ',' + str(X) + ',' + str(Y) + ',' +  str(Z)
+def sendData(data):
         sock.sendall(data.encode("utf-8"))
         response = sock.recv(1024).decode("utf-8")
-        print (response)
+        print ("Response: ", response)
 
+# https://www.youtube.com/watch?v=tFNJGim3FXw&ab_channel=NicholasRenotte
+# Tutorial used to create this program
+
+# Fixing path bug i encountered requiring unix or linux based system by converting to windows
+temp = pathlib.PosixPath
+pathlib.PosixPath = pathlib.WindowsPath
+
+# PyTorch function used to load models.
+# Trained using YOLOv5 using a custom dataset of gestures
+# YOLOv5 model by Ultralytics https://github.com/ultralytics/yolov5
+model = torch.hub.load('ultralytics/yolov5', 'custom', path='yolov5/runs/train/yolov5s_gestures_added_gestures_v32/weights/best.pt', force_reload=True)
+
+# Output of algorithm to be used as output to game
+label_names_list = model.names
+current_detection = None
+gesture_history = []
+
+# OpenCV camera video capture
+cap = cv2.VideoCapture(0)
 try:
-    # Connect to the server and send the data
-    sock.connect((host, port))
-    while (running):
-        inp = str(input(prompt))
+      while cap.isOpened():
+      
+            ret, frame = cap.read()
+            results = model(frame)
+            
+            # Box positioning using xyxy
+            cv2.imshow('Gesture Detection', np.squeeze(results.render()))
 
-        if(inp.lower().__eq__('s')):
-              inp = str(input(sizPrompt))
-              match inp.lower():
-                    case 'a':
-                          magnitude = int(input("How much are we adding by?\n(Enter a number)\n>>"))
-                          sendData(inp, magnitude, 0, 's')
-                    case 's':
-                          magnitude = int(input("How much are we subtracting by?\n(Enter a number)\n>>"))
-                          sendData(inp, magnitude, 0, 's')
-                    case 'm':
-                          magnitude = int(input("How much are we multiplying by?\n(Enter a number)\n>>"))
-                          sendData(inp, magnitude, 0, 's')
-                    case 'd':
-                          magnitude = int(input("How much are we dividing by?\n(Enter a number)\n>>"))
-                          if(magnitude == 0):
-                                print("You cannot divide by zero!")
-                          else:
-                                sendData(inp, magnitude, 0, 's')
-                    case _:
-                          print("This data is incorrect!")
-
-        elif(inp.lower().__eq__('p')):
-                inp = input(posPrompt)
-                match inp.lower():
-                        case 'x':
-                             inp = int(input("X: How many in this direction?\n>>"))
-                             dataX = dataX + inp
-                        case 'y':
-                             inp = int(input("Y: How many in this direction?\n>>"))
-                             dataY = dataY + inp
-                        case 'z':
-                             inp = int(input("Z: How many in this direction?\n>>"))
-                             dataZ = dataZ + inp
-                sendData(dataX, dataY, dataZ, 'p')
-        else:
-              print("This data was incorrect. Try again!\n\n\n")
-
-        inp = str(input("Again?(y/n)"))
-        if(inp.lower().__eq__('n')):
-            running = False
-
+            # All detections put into a list of labels
+            labels = [label_names_list[int(i.cpu().numpy())] for i in results.xyxy[0][:, -1].int()]
+            # Set first-most label as current detection
+            current_detection = labels[0] if labels else None
+            print("\nSent: ", current_detection)
+            if current_detection != None:
+                   sendData(current_detection)
+                  
+            # Create logfile to see most identified gestures
+            # used to fix any bias/skewing
+            if current_detection:
+                  gesture_history.append(current_detection)
+                  if os.path.isfile("gesture_history.txt"):
+                        with open('gesture_history.txt', 'w') as file:
+                                    file.write("\n".join(gesture_history))
+                  else:
+                        with open('gesture_history.txt', 'a') as file:
+                                    file.write("\n".join(gesture_history))
+            # Break if keyboard q is pressed
+            if cv2.waitKey(10) & 0xFF == ord('q'):
+                  break
+except Exception as e:
+      print("Error given: ", e)
 finally:
-    sock.close()
+      sock.close()
+
+cap.release()
+cv2.destroyAllWindows()
